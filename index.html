@@ -1,0 +1,118 @@
+<html>
+  <head>
+    <title>ktktktktktktktktktktktktktktktktktk</title>
+  </head>
+  <body style="margin: 0; padding: 0; background-color: #00a; overflow: hidden;">
+    <div style="display: none;">
+      <img id="source" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABYAAAAmCAYAAADAzmuWAAAABHNCSVQICAgIfAhkiAAAAAlwSFlzAAAOxAAADsQBlSsOGwAAABl0RVh0U29mdHdhcmUAd3d3Lmlua3NjYXBlLm9yZ5vuPBoAAADkSURBVEiJ7dUxSgNBFAbgb2IKUUSitQfwAh5BBEs7aysLG0uvYGflBZIynTbiOSzsBFvBVuG32UgSskXYVYnsD8PwePAxDI8ZiSSGWk6vbbCDO/g/wf3pIjHAZeswBrj6CfgF+w3NaxzPwKX4wFMTNfHOb09Fopc4TOzW9NcTR4nNpWDc4A4PibKgP8I9xsvCO1jDRrXPZ7vat+rg+amY5ByvGJfic0H/DBe4rYO1/TUlhoms7luxlzhpaD2W4u27qu64jXVQecNE+jhteNJJnqeLfilGLcEzWb2p6OAO7uC/gL8ACqJ17JvXDbkAAAAASUVORK5CYII=" />
+    </div>
+    <canvas id="screen" style="width: 100%; height: 100%;"></canvas>
+    <script>
+      var image = document.getElementById("source");
+
+      function wrap(src, size)
+      {
+        src = src % size;
+        if (src < 0)
+          src += size;
+
+        return src;
+      };
+
+      function makeParticle()
+      {
+        return {
+          velocity : [Math.random() * 200 - 100, Math.random() * 200 - 100],
+          position : [Math.random() * window.innerWidth, Math.random() * window.innerHeight]
+        };
+      };
+
+      function copyParticle(particle)
+      {
+        return {
+          velocity : [particle.velocity[0], particle.velocity[1]],
+          position : [particle.position[0], particle.position[1]]
+        };
+      };
+
+      function updateParticles(oldParticles, dt)
+      {
+        var newParticles = [];
+        for (var i = 0; i < oldParticles.length; i++)
+        {
+          var particle = copyParticle(oldParticles[i]);
+          for (var j = 0; j < 2; j++)
+          {
+            particle.position[j] = particle.position[j] + particle.velocity[j] * dt;
+          }
+          particle.position[0] = wrap(particle.position[0], window.innerWidth);
+          particle.position[1] = wrap(particle.position[1], window.innerHeight);
+          newParticles.push(particle);
+        }
+        return newParticles;
+      };
+
+      function drawParticle(ctx, particle)
+      {
+        var pos = [ wrap(particle.position[0] - image.naturalWidth / 2, window.innerWidth), wrap(particle.position[1] - image.naturalHeight / 2, window.innerHeight) ];
+        var horizontalSplit = image.naturalWidth, verticalSplit = image.naturalHeight;
+        if (pos[0] < 0)
+        {
+          horizontalSplit = -pos[0];
+        }
+        else if (pos[0] > window.innerWidth - image.naturalWidth)
+        {
+          horizontalSplit = window.innerWidth - pos[0];
+        }
+        if (pos[1] < 0)
+        {
+          verticalSplit = -pos[1];
+        }
+        else if (pos[1] > window.innerHeight - image.naturalHeight)
+        {
+          verticalSplit = window.innerHeight - pos[1];
+        }
+        var horizontalRemainder = image.naturalWidth - horizontalSplit;
+        var verticalRemainder = image.naturalHeight - verticalSplit;
+        ctx.drawImage(image, 0, 0, horizontalSplit, verticalSplit, pos[0], pos[1], horizontalSplit, verticalSplit);
+        if (horizontalRemainder > 0)
+        {
+          ctx.drawImage(image, horizontalSplit, 0, horizontalRemainder, verticalSplit, 0, pos[1], horizontalRemainder, verticalSplit);
+        }
+        if (verticalRemainder > 0)
+        {
+          ctx.drawImage(image, 0, verticalSplit, horizontalSplit, verticalRemainder, pos[0], 0, horizontalSplit, verticalRemainder);
+        }
+        if (horizontalRemainder > 0 && verticalRemainder > 0)
+        {
+          ctx.drawImage(image, horizontalSplit, verticalSplit, horizontalRemainder, verticalRemainder, 0, 0, horizontalRemainder, verticalRemainder);
+        }
+      };
+
+      function update(ctx, particles, last)
+      {
+        var now = performance.now();
+        var dt = (now - last) / 1000;
+        particles = updateParticles(particles, dt);
+        ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+        for (var particle of particles)
+          drawParticle(ctx, particle);
+        window.setTimeout(() => { update(ctx, particles, now); }, 1000/60);
+      };
+
+      window.addEventListener("load", () =>
+      {
+        var particles = [];
+        var nParticles = (window.innerWidth * window.innerHeight) / (image.naturalWidth * image.naturalHeight) / 4;
+        for (var i = 0; i < nParticles; i++)
+        {
+          particles.push(makeParticle());
+        }
+        var canvas = document.getElementById('screen');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        window.setTimeout(() => { update(canvas.getContext('2d'), particles, performance.now()); }, 1000/60);
+      });
+    </script>
+  </body>
+</html>
